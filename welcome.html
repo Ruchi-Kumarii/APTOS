@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to AptosFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="overflow-hidden">
+    <!-- 3D Background Canvas -->
+    <div id="threejs-container" class="fixed inset-0 z-0"></div>
+    
+    <!-- Floating Particles -->
+    <div id="particles-js"></div>
+    
+    <!-- Main Content -->
+    <div class="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 text-center">
+        <!-- Logo with 3D effect -->
+        <div class="logo-3d mb-12">
+            <div class="logo-inner">
+                <span>A</span>
+            </div>
+        </div>
+        
+        <!-- Animated Title -->
+        <h1 class="text-6xl md:text-8xl font-extrabold mb-8 tracking-tight">
+            <span class="text-gradient animate-gradient">AptosFlow</span>
+        </h1>
+        
+        <p class="text-xl md:text-2xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Experience the future of gasless transactions on Aptos blockchain
+        </p>
+        
+      
+    <a href="index.html" class="enter-button">
+    <span class="font-bold tracking-wide">WELCOME TO THE DASHBOARD</span>
+    <div class="hover-effect"></div>
+    <div class="button-shadow"></div>
+    </a>
+        
+        <!-- Loading Animation (hidden by default) -->
+        <div id="loadingIndicator" class="mt-12 hidden">
+            <div class="loading-spinner"></div>
+            <p class="mt-4 text-gray-400">Initializing blockchain connection...</p>
+        </div>
+    </div>
+    
+    <!-- Footer Note -->
+    <div class="fixed bottom-6 left-0 right-0 text-center text-gray-500 text-sm">
+        Powered by Aptos | Secure Relayer Network
+    </div>
+
+    <script>
+        // Initialize 3D scene
+        function initThreeJS() {
+            const container = document.getElementById('threejs-container');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create a galaxy of stars
+            const starsGeometry = new THREE.BufferGeometry();
+            const starsMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.05,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const starsVertices = [];
+            for (let i = 0; i < 1000; i++) {
+                const x = (Math.random() - 0.5) * 2000;
+                const y = (Math.random() - 0.5) * 2000;
+                const z = (Math.random() - 0.5) * 2000;
+                starsVertices.push(x, y, z);
+            }
+            
+            starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+            const stars = new THREE.Points(starsGeometry, starsMaterial);
+            scene.add(stars);
+            
+            // Add floating orbs
+            const orbGeometry = new THREE.SphereGeometry(1, 32, 32);
+            const orbs = [];
+            const colors = [0x4facfe, 0x00f2fe, 0x667eea, 0x764ba2];
+            
+            for (let i = 0; i < 4; i++) {
+                const orbMaterial = new THREE.MeshPhongMaterial({
+                    color: colors[i],
+                    transparent: true,
+                    opacity: 0.4,
+                    shininess: 100
+                });
+                
+                const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+                orb.position.x = (Math.random() - 0.5) * 10;
+                orb.position.y = (Math.random() - 0.5) * 10;
+                orb.position.z = (Math.random() - 0.5) * 10;
+                orb.scale.setScalar(2 + Math.random() * 3);
+                scene.add(orb);
+                orbs.push(orb);
+            }
+            
+            // Add ambient and directional light
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            camera.position.z = 5;
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Rotate orbs
+                orbs.forEach(orb => {
+                    orb.rotation.x += 0.001;
+                    orb.rotation.y += 0.002;
+                });
+                
+                // Rotate stars slightly
+                stars.rotation.x += 0.0001;
+                stars.rotation.y += 0.0002;
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        
+        // Initialize particles.js
+        function initParticles() {
+            const particles = [];
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.width = `${Math.random() * 10 + 5}px`;
+                particle.style.height = particle.style.width;
+                particle.style.background = `radial-gradient(circle, rgba(102,126,234,0.8) 0%, rgba(118,75,162,0.4) 100%)`;
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                particle.style.opacity = Math.random() * 0.5 + 0.1;
+                
+                document.getElementById('particles-js').appendChild(particle);
+                particles.push({
+                    element: particle,
+                    x: Math.random() * 100,
+                    y: Math.random() * 100,
+                    speedX: (Math.random() - 0.5) * 0.2,
+                    speedY: (Math.random() - 0.5) * 0.2
+                });
+            }
+            
+            // Animate particles
+            function updateParticles() {
+                particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    
+                    // Wrap around screen edges
+                    if (p.x > 100) p.x = 0;
+                    if (p.x < 0) p.x = 100;
+                    if (p.y > 100) p.y = 0;
+                    if (p.y < 0) p.y = 100;
+                    
+                    p.element.style.left = `${p.x}vw`;
+                    p.element.style.top = `${p.y}vh`;
+                });
+                
+                requestAnimationFrame(updateParticles);
+            }
+            
+            updateParticles();
+        }
+        
+        // Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initThreeJS();
+            initParticles();
+            
+            // Add click effect to enter button
+            const enterButton = document.querySelector('.enter-button');
+            enterButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('loadingIndicator').classList.remove('hidden');
+                setTimeout(() => {
+                    window.location.href = enterButton.href;
+                }, 1500);
+            });
+        });
+    </script>
+</body>
+</html>

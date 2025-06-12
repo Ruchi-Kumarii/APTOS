@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AptosFlow - Gasless Transactions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Existing styles */
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(30, 41, 59, 0.7) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 41, 59, 0.7) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -2;
+        }
+        
+        .floating-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: -1;
+        }
+        
+        .floating-orb:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, #7e22ce 0%, transparent 70%);
+            top: 20%;
+            left: 10%;
+            animation: float 15s infinite ease-in-out;
+        }
+        
+        .floating-orb:nth-child(2) {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #0ea5e9 0%, transparent 70%);
+            top: 60%;
+            left: 80%;
+            animation: float 18s infinite ease-in-out reverse;
+        }
+        
+        .floating-orb:nth-child(3) {
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+            top: 10%;
+            left: 80%;
+            animation: float 12s infinite ease-in-out;
+        }
+        
+        .floating-orb:nth-child(4) {
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, #10b981 0%, transparent 70%);
+            top: 70%;
+            left: 15%;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        .floating-orb:nth-child(5) {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, #f59e0b 0%, transparent 70%);
+            top: 30%;
+            left: 50%;
+            animation: float 14s infinite ease-in-out reverse;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translate(0, 0);
+            }
+            50% {
+                transform: translate(-20px, -30px);
+            }
+            100% {
+                transform: translate(0, 0);
+            }
+        }
+        
+        .nav-glass {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn-3d {
+            background: linear-gradient(145deg, #7e22ce, #5b21b6);
+            box-shadow: 0 4px 15px rgba(126, 34, 206, 0.4);
+            border: none;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-3d:hover {
+            background: linear-gradient(145deg, #8b5cf6, #7e22ce);
+            box-shadow: 0 6px 20px rgba(126, 34, 206, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        .btn-3d:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 10px rgba(126, 34, 206, 0.4);
+        }
+        
+        .input-3d {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 12px;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .input-3d:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .status-disconnected {
+            background: linear-gradient(145deg, #64748b, #475569);
+        }
+        
+        .status-connected {
+            background: linear-gradient(145deg, #10b981, #059669);
+        }
+        
+        .status-pending {
+            background: linear-gradient(145deg, #f59e0b, #d97706);
+        }
+        
+        /* New Footer Styles */
+        .footer-section {
+            padding: 60px 0 30px;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%);
+            border-top: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .footer-column h3 {
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+            position: relative;
+            padding-bottom: 10px;
+            color: #e2e8f0;
+            font-weight: 700;
+        }
+        
+        .footer-column h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(to right, #8b5cf6, #ec4899);
+            border-radius: 3px;
+        }
+        
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .footer-links li {
+            margin-bottom: 15px;
+        }
+        
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: #e2e8f0;
+            transform: translateX(5px);
+        }
+        
+        .footer-links a i {
+            margin-right: 12px;
+            font-size: 14px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .contact-info p {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #94a3b8;
+        }
+        
+        .contact-info i {
+            margin-right: 12px;
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+            color: #8b5cf6;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.7);
+            color: #e2e8f0;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background: linear-gradient(145deg, #8b5cf6, #ec4899);
+            transform: translateY(-3px);
+        }
+        
+        .copyright {
+            text-align: center;
+            padding: 25px 0;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+            margin-top: 30px;
+        }
+        
+        .newsletter-form {
+            display: flex;
+            margin-top: 20px;
+        }
+        
+        .newsletter-form input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 8px 0 0 8px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(15, 23, 42, 0.4);
+            color: white;
+            outline: none;
+        }
+        
+        .newsletter-form button {
+            background: linear-gradient(145deg, #8b5cf6, #7e22ce);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .newsletter-form button:hover {
+            background: linear-gradient(145deg, #7e22ce, #8b5cf6);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .footer-column h3 {
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Grid Background -->
+    <div class="grid-background"></div>
+    
+    <!-- Floating Orbs -->
+    <div class="floating-orb"></div>
+    <div class="floating-orb"></div>
+    <div class="floating-orb"></div>
+    <div class="floating-orb"></div>
+    <div class="floating-orb"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-glass fixed top-0 w-full z-50">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center transform rotate-12 hover:rotate-0 transition-transform duration-300">
+                            <span class="text-white font-bold text-lg">A</span>
+                        </div>
+                        <div>
+                            <h1 class="font-bold text-xl text-white">AptosFlow</h1>
+                            <p class="text-xs text-gray-400">Gasless Transactions</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <div class="hidden md:flex items-center space-x-3">
+                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm text-gray-300">Relayer Active</span>
+                    </div>
+                    <button id="walletButton" onclick="connectWallet()" 
+                            class="status-disconnected px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300 btn-3d">
+                        Connect Petra
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center pt-16">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="text-6xl md:text-8xl font-black mb-8 leading-tight">
+                    <span class="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+                        AptosFlow
+                    </span>
+                    <br>
+                    <span class="text-white">Gasless</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed max-w-3xl mx-auto">
+                    Experience seamless blockchain interactions. Send APT tokens without paying gas fees through our advanced relayer infrastructure on Aptos.
+                </p>
+                
+                <!-- Stats Dashboard -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+                    <div class="glass-card p-8">
+                        <div class="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent" id="sponsorBalance">
+                            Loading...
+                        </div>
+                        <div class="text-gray-400 text-sm uppercase tracking-wider">Sponsor Balance</div>
+                    </div>
+                    <div class="glass-card p-8">
+                        <div class="text-4xl font-bold mb-2 bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent" id="completedTxs">
+                            0
+                        </div>
+                        <div class="text-gray-400 text-sm uppercase tracking-wider">Completed Transactions</div>
+                    </div>
+                    <div class="glass-card p-8">
+                        <div class="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent" id="dailyUsed">
+                            0
+                        </div>
+                        <div class="text-gray-400 text-sm uppercase tracking-wider">Daily Transactions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Application -->
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+        
+        <!-- Wallet Status Alert -->
+        <div id="walletStatus" class="glass-card p-6 mb-12 border-yellow-500/30 hidden">
+            <div class="flex items-center space-x-4">
+                <div class="w-6 h-6 text-yellow-400">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <p class="text-yellow-300" id="walletStatusMessage">Please connect your Petra wallet to use gasless transactions.</p>
+            </div>
+        </div>
+
+        <!-- Gasless Transfer Section -->
+        <div class="glass-card p-10 mb-16">
+            <div class="text-center mb-12">
+                <div class="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl flex items-center justify-center">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-4xl font-bold text-white mb-4">Gasless Transfer</h2>
+                <p class="text-gray-400 text-lg">Send APT tokens without any gas fees</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-12">
+                <!-- Transfer Form -->
+                <div class="space-y-8">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">From Address</label>
+                        <input type="text" id="userAddress" placeholder="Connect wallet to auto-fill" 
+                               class="input-3d w-full px-6 py-4 text-lg" readonly>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">To Address</label>
+                        <input type="text" id="gaslessToAddress" placeholder="Enter recipient address" 
+                               class="input-3d w-full px-6 py-4 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">Amount (APT)</label>
+                        <input type="number" id="gaslessAmount" placeholder="0.00" step="0.01"
+                               class="input-3d w-full px-6 py-4 text-lg">
+                    </div>
+                    
+                    <button onclick="executeGaslessTransfer()" 
+                            class="btn-3d w-full py-6 px-8 rounded-2xl font-bold text-white text-xl">
+                         Send Gasless Transfer
+                    </button>
+                    
+                    <div class="text-center p-6 glass-card">
+                        <p class="text-gray-300">
+                            <span class="inline-block w-6 h-6 mr-2">✨</span>
+                            Completely free! Zero gas fees for users.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Status Panel -->
+                <div class="space-y-8">
+                    <div class="glass-card p-8">
+                        <h3 class="font-bold text-white mb-6 text-xl flex items-center">
+                            <div class="w-4 h-4 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+                            Wallet Status
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-gray-400">Connection:</span>
+                                <span id="walletConnectionStatus" class="status-disconnected text-xs px-3 py-1">Disconnected</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-gray-400">Balance:</span>
+                                <span id="userBalance" class="font-mono text-white">-</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-gray-400">Eligible:</span>
+                                <span id="userEligible" class="font-mono text-white">-</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-gray-400">Network:</span>
+                                <span id="userNetwork" class="font-mono text-cyan-400">Devnet</span>
+                            </div>
+                        </div>
+                        <button onclick="loadUserInfo()" 
+                                class="mt-6 w-full btn-3d py-3 px-6 rounded-xl text-white font-semibold">
+                            🔄 Refresh Status
+                        </button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="glass-card p-8">
+                        <h3 class="font-bold text-white mb-6 text-xl">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button onclick="fundUser()" class="w-full btn-3d py-3 px-6 rounded-xl text-white font-semibold">
+                                💰 Fund Account (Test)
+                            </button>
+                            <button onclick="viewTransactionHistory()" class="w-full btn-3d py-3 px-6 rounded-xl text-white font-semibold">
+                                📜 View History
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Developer Tools -->
+        <div class="glass-card p-10">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-white mb-4"> Developer Tools</h2>
+                <p class="text-gray-400">Manage sponsor account and monitor the relayer system</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                <!-- Sponsor Account -->
+                <div class="glass-card p-8">
+                    <h3 class="font-bold text-white mb-6">Sponsor Account</h3>
+                    <div class="space-y-4 mb-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">Address:</span>
+                            <span id="sponsorAddress" class="font-mono text-xs text-cyan-400">Loading...</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">Balance:</span>
+                            <span id="sponsorBalanceDetail" class="font-mono text-white">Loading...</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">Status:</span>
+                            <span id="sponsorStatus" class="status-pending text-xs px-3 py-1">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <button onclick="fundSponsor()" 
+                                class="w-full btn-3d py-3 px-4 rounded-lg text-white font-semibold">
+                            Fund Sponsor (10 APT)
+                        </button>
+                        <button onclick="loadSponsorInfo()" 
+                                class="w-full glass-card py-3 px-4 rounded-lg text-gray-300 font-semibold hover:text-white transition-colors">
+                            Refresh Info
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Stats -->
+                <div class="glass-card p-8">
+                    <h3 class="font-bold text-white mb-6">System Stats</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">Total Sponsored:</span>
+                            <span class="font-mono text-green-400" id="totalSponsored">127 APT</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">Success Rate:</span>
+                            <span class="font-mono text-green-400" id="successRate">99.8%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">Avg. Response:</span>
+                            <span class="font-mono text-cyan-400" id="avgResponse">0.8s</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">Uptime:</span>
+                            <span class="font-mono text-green-400" id="uptime">99.9%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction History -->
+                <div class="glass-card p-8 lg:col-span-2 xl:col-span-1">
+                    <h3 class="font-bold text-white mb-6">Recent Transactions</h3>
+                    <div class="space-y-3 max-h-64 overflow-y-auto" id="transactionHistory">
+                        <div class="text-gray-400 text-center py-8">
+                            No transactions yet
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW FOOTER SECTIONS -->
+    <footer class="footer-section">
+        <div class="footer-grid">
+            <!-- Help Section -->
+            <div class="footer-column">
+                <h3><i class="fas fa-question-circle mr-2"></i> Help & Support</h3>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fas fa-book"></i> Documentation</a></li>
+                    <li><a href="#"><i class="fas fa-video"></i> Video Tutorials</a></li>
+                    <li><a href="#"><i class="fas fa-file-alt"></i> Guides & How-tos</a></li>
+                    <li><a href="#"><i class="fas fa-headset"></i> Support Portal</a></li>
+                    <li><a href="#"><i class="fas fa-comments"></i> Community Forum</a></li>
+                </ul>
+            </div>
+            
+            <!-- Contact Us Section -->
+            <div class="footer-column">
+                <h3><i class="fas fa-envelope mr-2"></i> Contact Us</h3>
+                <div class="contact-info">
+                    <p><i class="fas fa-envelope"></i> support@aptosflow.io</p>
+                    <p><i class="fas fa-phone-alt"></i> +1 (800) APT-FLOW</p>
+                    <p><i class="fas fa-map-marker-alt"></i> Blockchain Blvd, Aptos Network</p>
+                </div>
+                <div class="social-links">
+                    <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" title="Discord"><i class="fab fa-discord"></i></a>
+                    <a href="#" title="Telegram"><i class="fab fa-telegram"></i></a>
+                    <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+            
+            <!-- Learn More Section -->
+            <div class="footer-column">
+                <h3><i class="fas fa-graduation-cap mr-2"></i> Learn More</h3>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fas fa-rocket"></i> How Gasless Works</a></li>
+                    <li><a href="#"><i class="fas fa-shield-alt"></i> Security Features</a></li>
+                    <li><a href="#"><i class="fas fa-wallet"></i> Aptos Ecosystem</a></li>
+                    <li><a href="#"><i class="fas fa-blog"></i> Developer Blog</a></li>
+                    <li><a href="#"><i class="fas fa-calendar-alt"></i> Events & Webinars</a></li>
+                </ul>
+            </div>
+            
+            <!-- Newsletter Section -->
+            <div class="footer-column">
+                <h3><i class="fas fa-paper-plane mr-2"></i> Newsletter</h3>
+                <p class="text-gray-400 mb-4">Subscribe to get updates on new features and gasless innovations.</p>
+                <div class="newsletter-form">
+                    <input type="email" placeholder="Your email address">
+                    <button><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <p class="text-sm text-gray-500 mt-3">We respect your privacy. Unsubscribe at any time.</p>
+            </div>
+        </div>
+        
+        <!-- Copyright -->
+        <div class="copyright">
+            <p>&copy; 2025 AptosFlow. Powered by advanced blockchain technology.</p>
+        </div>
+    </footer>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // Global variables
+        let wallet = null;
+        let userAccount = null;
+        let sponsorAccount = null;
+        let transactionHistory = [];
+        let completedTransactions = 0;
+        let dailyTransactions = 0;
+        
+        // Aptos configuration
+        const APTOS_DEVNET_URL = "https://fullnode.devnet.aptoslabs.com/v1";
+        const APTOS_FAUCET_URL = "https://faucet.devnet.aptoslabs.com";
+        
+        // Mock sponsor account for demo
+        const MOCK_SPONSOR = {
+            address: "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+            balance: 1000.5,
+            privateKey: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        };
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSponsorInfo();
+            createParticleEffect();
+            updateWalletStatus();
+            loadTransactionHistory();
+            
+            // Auto-refresh stats every 30 seconds
+            setInterval(() => {
+                loadSponsorInfo();
+                if (userAccount) {
+                    loadUserInfo();
+                }
+                updateStats();
+            }, 30000);
+        });
+
+        // Particle effect for mouse movement
+        function createParticleEffect() {
+            document.addEventListener('mousemove', function(e) {
+                if (Math.random() > 0.9) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = e.clientX + 'px';
+                    particle.style.top = e.clientY + 'px';
+                    document.body.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, 3000);
+                }
+            });
+        }
+        
+        // Mock functions for demo purposes
+        function loadSponsorInfo() {
+            document.getElementById('sponsorBalance').textContent = `${MOCK_SPONSOR.balance} APT`;
+            document.getElementById('sponsorBalanceDetail').textContent = `${MOCK_SPONSOR.balance} APT`;
+            document.getElementById('sponsorAddress').textContent = MOCK_SPONSOR.address.substring(0, 16) + '...';
+            document.getElementById('sponsorStatus').textContent = 'Active';
+            document.getElementById('sponsorStatus').className = 'status-connected text-xs px-3 py-1';
+        }
+        
+        function updateStats() {
+            document.getElementById('completedTxs').textContent = completedTransactions;
+            document.getElementById('dailyUsed').textContent = dailyTransactions;
+        }
+        
+        function connectWallet() {
+            // Simulate wallet connection
+            document.getElementById('walletButton').textContent = '0x3f5...d8a';
+            document.getElementById('walletButton').className = 'status-connected px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300';
+            document.getElementById('walletConnectionStatus').textContent = 'Connected';
+            document.getElementById('walletConnectionStatus').className = 'status-connected text-xs px-3 py-1';
+            document.getElementById('userAddress').value = '0x3f5C5...d8a';
+            document.getElementById('userBalance').textContent = '42.75 APT';
+            document.getElementById('userEligible').textContent = 'Yes';
+            
+            // Show success notification
+            showNotification('Wallet connected successfully!', 'success');
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-6 right-6 px-6 py-4 rounded-lg shadow-lg z-50 transform transition-all duration-300 ${
+                type === 'success' ? 'bg-green-900 text-green-200 border border-green-700' : 
+                type === 'error' ? 'bg-red-900 text-red-200 border border-red-700' : 
+                'bg-blue-900 text-blue-200 border border-blue-700'
+            }`;
+            notification.textContent = message;
+            document.getElementById('notificationContainer').appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
